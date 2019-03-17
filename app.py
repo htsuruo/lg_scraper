@@ -6,6 +6,7 @@ import lxml.html
 import urllib
 import pandas as pd
 import numpy as np
+import re
 
 OUTPUT_PATH = './output/local government.csv'
 URL_TOP = 'https://advance21.sakura.ne.jp/chihoujichitai/'
@@ -13,8 +14,6 @@ URL_TOP = 'https://advance21.sakura.ne.jp/chihoujichitai/'
 
 class SummaryScraper:
     # 1800弱の市区町村リストを扱うクラス.
-
-    url = "https://advance21.sakura.ne.jp/chihoujichitai/hokkaido.html"
 
     def __init__(self):
         print('start scraping prefectures...')
@@ -50,16 +49,15 @@ class SummaryScraper:
         for pref in self.pref_list:
 
             target_url = URL_TOP + pref['url']
-            prefecture = ''
 
             try:
-                df = pd.DataFrame(columns=['pref', 'name', 'url', 'mail_domain'])
+                df = pd.DataFrame(columns=['pref', 'name', 'url'])
                 html = urlopen(target_url)
                 soup = BeautifulSoup(html.read(), "lxml")
                 links = soup.select("center table tr td a")
 
                 for link in links:
-                    if str(link).count('☆') or str(link) == str(links[0]):
+                    if str(link).count('☆'):
                         continue
                     href = link.get('href')
                     arr = href.split("//")
@@ -69,8 +67,7 @@ class SummaryScraper:
                         mail_domain = mail_domain.replace('www.', '')
                         mail_domain = mail_domain[:-1]
 
-                    df = df.append({"pref": pref['name'], "name": link.text, "url": href,
-                                    "mail_domain": mail_domain}, ignore_index=True)
+                    df = df.append({"pref": pref['name'], "name": link.text, "url": href}, ignore_index=True)
 
                 self.pref_df = pd.concat([self.pref_df, df])
 
@@ -81,9 +78,21 @@ class SummaryScraper:
 
 class LGScraper:
     # 市区町村の中身を扱うクラス.
+    sample_url = 'http://www.city.yokohama.lg.jp/kenko/shogai/yougu/yougu.html'
 
     def __init__(self):
         pass
+
+    def get_text(self):
+        try:
+            html = urlopen(self.sample_url)
+            soup = BeautifulSoup(html.read(), "lxml")
+            text = soup.find_all(string=re.compile("@city.yokohama"))
+            print(text)
+
+        except Exception as e:
+            print(e)
+
 
 
 def save_to_csv(df):
@@ -97,17 +106,15 @@ def save_to_csv(df):
 
 
 def execute():
-    s_scraper = SummaryScraper()
-    s_scraper.get_prefectures()
-    s_scraper.get_cities()
-    # print(s_scraper.pref_df)
+    # s_scraper = SummaryScraper()
+    # s_scraper.get_prefectures()
+    # s_scraper.pref_list.append({'url': 'hokkaido.html', 'name': '北海道'})
+    # s_scraper.get_cities()
+    lg_scraper = LGScraper()
+    lg_scraper.get_text()
 
-    # df = s_scraper.get_cities()
-    # if df is None:
-    #     print("list is not found.")
-    #     return
-    # print("success.")
-    save_to_csv(s_scraper.pref_df)
+
+    # save_to_csv(s_scraper.pref_df)
 
 
 if __name__ == '__main__':
