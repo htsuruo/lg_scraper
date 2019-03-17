@@ -1,2 +1,2 @@
 # lg_scraper
-scraper for japanese local gaverment.
+地方自治体（local goverment）の連絡先、主にメールアドレスを取得するスクレイパ
