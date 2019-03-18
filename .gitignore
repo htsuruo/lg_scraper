@@ -1,2 +1,4 @@
 .idea/
 output/
+.scrapy/
+__pycache__/
