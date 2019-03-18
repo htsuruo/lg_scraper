@@ -12,9 +12,10 @@ class ScrapyLocalGoverment(scrapy.Spider):
     def parse(self, response):
         print("\n>>> Parse " + response.url + " <<<")
         urls = response.css("a::attr('href')").extract()
+        self.parse_word(response)
         for url in urls:
             url = response.urljoin(url)
-            yield scrapy.Request(url, callback=self.parse_word)
+            yield scrapy.Request(url, callback=self.parse)
 
     def parse_word(self, response):
         main_contents = response.css('body').extract_first()
