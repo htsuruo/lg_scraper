@@ -8,12 +8,16 @@ import re
 
 class MySpider(CrawlSpider):
     name = 'sampler'
-    allowed_domains = ['www.city.yokohama.lg.jp']
-    start_urls = ['http://www.city.yokohama.lg.jp']
-    search_word = '@city.yokohama'
+    allowed_domains = ['www.city.chiba.jp']
+    start_urls = ['http://www.city.chiba.jp/']
+    search_word = '@city.chiba'
 
-    list_allow = [r'^(?=.*shogai).*$']  # この条件に合うリンクは巡回
+    list_allow = [r'^(?=.*fukushi).*$']  # この条件に合うリンクは巡回
     list_deny = [r'.+\.(txt|pdf)']
+
+    kw_list = ['日常', '生活', '用具', '福祉', '障害', '障がい']
+
+    email_list = ['']
 
     rules = (
         # 巡回ルール
@@ -36,13 +40,36 @@ class MySpider(CrawlSpider):
         main_contents = response.css('body').extract_first()
 
         if self.search_word in main_contents:
-            html = urlopen(response.url)
-            soup = BeautifulSoup(html.read(), "lxml")
-            email = soup.find_all(string=re.compile("@city.yokohama"))
+            title = response.css('title::text').extract_first()
+            if title is None:
+                return
 
-            item = LgScraperItem()
-            item['title'] = response.css('title::text').extract_first()
-            item['url'] = response.url
-            item['email'] = email
-            yield item
-            print('{}という文字列を発見しました。\nURL: {}'.format(self.search_word, response.url))
+            for kw in self.kw_list:
+                if kw in title is False:
+                    return
+
+                html = urlopen(response.url)
+                soup = BeautifulSoup(html.read(), "lxml")
+                email = soup.find_all(string=re.compile("@city.yokohama"))
+
+                emails = []
+                for e in email:
+                    tmp = re.sub(r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$', "", e)
+                    res = re.sub(tmp, "", e)
+                    if self.is_duplicate(res) is False:
+                        emails.append(res)
+                        self.email_list.append(res)
+
+                if len(emails) < 1:
+                    return
+
+                item = LgScraperItem()
+                item['title'] = title
+                item['url'] = response.url
+                item['email'] = emails
+                yield item
+                print('{}という文字列を発見しました。\nURL: {}'.format(self.search_word, response.url))
+
+
+    def is_duplicate(self, email):
+        return email in self.email_list
