@@ -8,11 +8,11 @@ import re
 
 class MySpider(CrawlSpider):
     name = 'sampler'
-    allowed_domains = ['www.city.chiba.jp']
-    start_urls = ['http://www.city.chiba.jp/']
-    search_word = '@city.chiba'
+    allowed_domains = ['www.city.sendai.jp']
+    start_urls = ['http://www.city.sendai.jp/']
+    search_word = '@city.sendai'
 
-    list_allow = [r'^(?=.*fukushi).*$']  # この条件に合うリンクは巡回
+    list_allow = [r'^(?=.*kenkotofukushi).*$']  # この条件に合うリンクは巡回
     list_deny = [r'.+\.(txt|pdf)']
 
     kw_list = ['日常', '生活', '用具', '福祉', '障害', '障がい']
@@ -50,7 +50,7 @@ class MySpider(CrawlSpider):
 
                 html = urlopen(response.url)
                 soup = BeautifulSoup(html.read(), "lxml")
-                email = soup.find_all(string=re.compile("@city.yokohama"))
+                email = soup.find_all(string=re.compile(self.search_word))
 
                 emails = []
                 for e in email:
