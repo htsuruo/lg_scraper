@@ -109,7 +109,11 @@ class LGScraper:
             if self._is_duplicate(res) is False:
                 emails.append(res)
                 self.email_list.append(res)
-        self.emails = emails
+
+        if len(emails) > 0:
+            self.emails = self.emails[0]
+        else:
+            self.emails = ''
 
     def _is_duplicate(self, email):
         return email in self.email_list
@@ -121,7 +125,7 @@ def google_search(domain):
     query = "{} {}".format(domain, kw)
     print('domain: ' + domain)
     try:
-        for url in search(query, lang='ja', stop=1, user_agent=get_random_user_agent()):
+        for url in search(query, lang='ja', stop=1, pause=5.0, user_agent=get_random_user_agent()):
             print(url)
             target_url = url
     except Exception as e:
@@ -209,20 +213,19 @@ def save_to_csv(df):
 
 
 def execute():
-    # s_scraper = SummaryScraper()
-    # s_scraper.get_prefectures()
-    # s_scraper.get_cities()
-    # lg_scraper = LGScraper()
-    # for index, row in s_scraper.pref_df.iterrows():
-    #     print("{} -> {}".format(row['pref'], row['name']))
-        # target_url = google_search(domain=str(row['domain']))
-        # target_url = yahoo_search(domain=str(row['domain']))
-        # search_word = gen_search_word(domain=str(row['domain']))
-        # lg_scraper.get_email(url=target_url, search_word=search_word)
-        # s_scraper.pref_df.at[index, 'target_url'] = target_url
+    s_scraper = SummaryScraper()
+    s_scraper.get_prefectures()
+    s_scraper.get_cities()
+    lg_scraper = LGScraper()
+    for index, row in s_scraper.pref_df.iterrows():
+        print("{} -> {}".format(row['pref'], row['name']))
+        target_url = google_search(domain=str(row['domain']))
+        search_word = gen_search_word(domain=str(row['domain']))
+        lg_scraper.get_email(url=target_url, search_word=search_word)
+        s_scraper.pref_df.at[index, 'target_url'] = target_url
         # s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
 
-    # save_to_csv(s_scraper.pref_df)
+    save_to_csv(s_scraper.pref_df)
 
 
 
