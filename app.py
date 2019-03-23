@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import re
 import requests
-from googlesearch import search
+from googlesearch import search, get_random_user_agent
 
 OUTPUT_PATH = './output/local government.csv'
 URL_TOP = 'https://advance21.sakura.ne.jp/chihoujichitai/'
@@ -53,7 +53,7 @@ class SummaryScraper:
             target_url = URL_TOP + pref['url']
 
             try:
-                df = pd.DataFrame(columns=['pref', 'name', 'top_url', 'domain', 'target_url', 'email' ])
+                df = pd.DataFrame(columns=['pref', 'name', 'top_url', 'domain', 'target_url', 'email'])
                 html = urlopen(target_url)
                 soup = BeautifulSoup(html.read(), "lxml")
                 links = soup.select("center table tr td a")
@@ -66,7 +66,9 @@ class SummaryScraper:
                     domain = arr[1]
                     domain = domain[:-1]
 
-                    df = df.append({"pref": pref['name'], "name": link.text, "top_url": href, 'domain': domain, 'target_url': get_target_url(domain=domain)}, ignore_index=True)
+                    data = {"pref": pref['name'], "name": link.text, "top_url": href, 'domain': domain}
+                    df = df.append(data, ignore_index=True)
+                    print(data)
 
                 self.pref_df = pd.concat([self.pref_df, df])
 
@@ -113,14 +115,41 @@ class LGScraper:
         return email in self.email_list
 
 # Google Search
-def get_target_url(domain):
+def google_search(domain):
     target_url = ''
     kw = '日常生活用具'
     query = "{} {}".format(domain, kw)
-    for url in search(query, lang='ja', stop=1):
-        print(url)
-        target_url = url
+    print('domain: ' + domain)
+    try:
+        for url in search(query, lang='ja', stop=1, user_agent=get_random_user_agent()):
+            print(url)
+            target_url = url
+    except Exception as e:
+        print(e)
+        target_url = None
     return target_url
+
+# Yahoo Search
+# def yahoo_search(domain):
+#     yahoo_url = 'http://search.yahoo.co.jp/search'
+#     target_url = ''
+#     kw = '日常生活用具'
+#     query = "site:{} {}".format(domain, kw)
+#     print(query)
+#     params = {'p': query,
+#               'num': '1',
+#               'search.x': '1',
+#               'fr': 'top_ga1_sa',
+#               'tid': 'top_ga1_sa',
+#               'ei': 'UTF-8',
+#               'aq': '',
+#               'oq': '',
+#               'afs': '', }
+#     print('domain: ' + domain)
+#     response = requests.get(yahoo_url, params)
+#     soup = BeautifulSoup(response.text, 'lxml')
+#     links = soup.select(".w .hd a")
+#     return target_url
 
 # class GoogleSearch:
     # headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"}
@@ -180,16 +209,20 @@ def save_to_csv(df):
 
 
 def execute():
-    s_scraper = SummaryScraper()
-    s_scraper.get_prefectures()
-    s_scraper.get_cities()
-    lg_scraper = LGScraper()
-    for index, row in s_scraper.pref_d.iterrows():
-        search_word = gen_search_word(domain=row['domain'])
-        lg_scraper.get_email(url=row['target_url'], search_word=search_word)
-        s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
+    # s_scraper = SummaryScraper()
+    # s_scraper.get_prefectures()
+    # s_scraper.get_cities()
+    # lg_scraper = LGScraper()
+    # for index, row in s_scraper.pref_df.iterrows():
+    #     print("{} -> {}".format(row['pref'], row['name']))
+        # target_url = google_search(domain=str(row['domain']))
+        # target_url = yahoo_search(domain=str(row['domain']))
+        # search_word = gen_search_word(domain=str(row['domain']))
+        # lg_scraper.get_email(url=target_url, search_word=search_word)
+        # s_scraper.pref_df.at[index, 'target_url'] = target_url
+        # s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
 
-    save_to_csv(s_scraper.pref_df)
+    # save_to_csv(s_scraper.pref_df)
 
 
 
