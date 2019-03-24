@@ -9,9 +9,13 @@ import numpy as np
 import re
 import requests
 from googlesearch import search, get_random_user_agent
+import os
+import platform
 
-OUTPUT_PATH = './output/local government.csv'
+OUTPUT_PATH = './output/local_government.csv'
+SCRAPED_PATH = './output/local_government_scraped.csv'
 URL_TOP = 'https://advance21.sakura.ne.jp/chihoujichitai/'
+df_columns = ['pref', 'name', 'top_url', 'domain', 'target_url', 'email']
 
 
 class SummaryScraper:
@@ -32,7 +36,8 @@ class SummaryScraper:
             links = soup.select("table tr td a")
 
             for link in links:
-                exclusion = str(link).count('HOME') or str(link).count('都道府県') or str(link).count('メール送信')
+                exclusion = str(link).count('HOME') or str(
+                    link).count('都道府県') or str(link).count('メール送信')
                 if exclusion:
                     continue
                 href = link.get('href')
@@ -53,7 +58,7 @@ class SummaryScraper:
             target_url = URL_TOP + pref['url']
 
             try:
-                df = pd.DataFrame(columns=['pref', 'name', 'top_url', 'domain', 'target_url', 'email'])
+                df = pd.DataFrame(columns=df_columns)
                 html = urlopen(target_url)
                 soup = BeautifulSoup(html.read(), "lxml")
                 links = soup.select("center table tr td a")
@@ -66,7 +71,8 @@ class SummaryScraper:
                     domain = arr[1]
                     domain = domain[:-1]
 
-                    data = {"pref": pref['name'], "name": link.text, "top_url": href, 'domain': domain}
+                    data = {"pref": pref['name'], "name": link.text,
+                            "top_url": href, 'domain': domain}
                     df = df.append(data, ignore_index=True)
                     print(data)
 
@@ -94,7 +100,8 @@ class LGScraper:
             email = soup.find_all(string=re.compile(search_word))
             self._set_emails(email)
             if len(self.emails) > 0:
-                print('{}という文字列を発見しました。\nemails: {}'.format(search_word, self.emails))
+                print('{}という文字列を発見しました。\nemails: {}'.format(
+                    search_word, self.emails))
             else:
                 print('{}を含む文字列は見つかりませんでした。'.format(search_word))
 
@@ -104,7 +111,8 @@ class LGScraper:
     def _set_emails(self, email):
         emails = []
         for e in email:
-            tmp = re.sub(r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$', "", e)
+            tmp = re.sub(
+                r'\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$', "", e)
             res = re.sub(tmp, "", e)
             if self._is_duplicate(res) is False:
                 emails.append(res)
@@ -119,6 +127,8 @@ class LGScraper:
         return email in self.email_list
 
 # Google Search
+
+
 def google_search(domain):
     target_url = ''
     kw = '日常生活用具'
@@ -166,17 +176,54 @@ def execute():
     #     search_word = gen_search_word(domain=str(row['domain']))
     #     lg_scraper.get_email(url=target_url, search_word=search_word)
     #     s_scraper.pref_df.at[index, 'target_url'] = target_url
-        # s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
+    # s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
 
     save_to_csv(s_scraper.pref_df)
 
+'''
+Google Searchを使ってターゲットのURLを拾ってくる.
+同一IPだと規制されるためEC2で動かす.
+処理が完了したら再起動する.
+'''
+def scrape_target_url():
+    df = pd.read_csv(OUTPUT_PATH)
+    if os.path.exists(SCRAPED_PATH):
+        df_scraped = pd.read_csv(SCRAPED_PATH)
+    else:
+        df_scraped = pd.DataFrame(columns=df_columns)
+
+    for index, row in df.iterrows():
+        if index > 1:
+            break
+        target_url = google_search(domain=str(row['domain']))
+        if target_url is None:
+            break
+        data = {"pref": str(row['pref']), "name": str(row['name']), "top_url": str(
+            row['top_url']), 'domain': str(row['domain']), 'target_url': target_url}
+        df_scraped = df_scraped.append(data, ignore_index=True)
+        df = df.drop(index)
+
+    df.to_csv(OUTPUT_PATH, index=False, encoding="utf_8_sig")
+    df_scraped.to_csv(SCRAPED_PATH, index=False, encoding="utf_8_sig")
+    pf = platform.system()
+
+    if pf == 'Linux':
+        reboot_os()
+
+
+def reboot_os():
+    reboot_cmd = 'sudo sh -c "reboot"'
+    os.system(reboot_cmd)
 
 
 if __name__ == '__main__':
     print('start scraping...')
     begin_time = time.time()
 
-    execute()
+    # execute()
+
+    # get target_url using by google search in ec2.
+    scrape_target_url()
 
     end_time = time.time()
     print("total time: {} sec".format(end_time - begin_time))
