@@ -1,4 +1,5 @@
 .idea/
-output/
+output/*
 .scrapy/
 __pycache__/
+!.gitkeep
