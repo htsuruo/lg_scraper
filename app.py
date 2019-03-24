@@ -135,7 +135,7 @@ def google_search(domain):
     query = "{} {}".format(domain, kw)
     print('domain: ' + domain)
     try:
-        for url in search(query, lang='ja', stop=1, pause=5.0, user_agent=get_random_user_agent()):
+        for url in search(query, lang='ja', stop=1, pause=6.0, user_agent=get_random_user_agent()):
             print(url)
             target_url = url
     except Exception as e:
@@ -187,14 +187,16 @@ Google Searchを使ってターゲットのURLを拾ってくる.
 '''
 def scrape_target_url():
     df = pd.read_csv(OUTPUT_PATH)
+    pf = platform.system()
+    if pf == 'Linux' and df.count() < 1:
+        shutdown_os()
+
     if os.path.exists(SCRAPED_PATH):
         df_scraped = pd.read_csv(SCRAPED_PATH)
     else:
         df_scraped = pd.DataFrame(columns=df_columns)
 
     for index, row in df.iterrows():
-        if index > 1:
-            break
         target_url = google_search(domain=str(row['domain']))
         if target_url is None:
             break
@@ -205,7 +207,6 @@ def scrape_target_url():
 
     df.to_csv(OUTPUT_PATH, index=False, encoding="utf_8_sig")
     df_scraped.to_csv(SCRAPED_PATH, index=False, encoding="utf_8_sig")
-    pf = platform.system()
 
     if pf == 'Linux':
         reboot_os()
@@ -214,6 +215,11 @@ def scrape_target_url():
 def reboot_os():
     reboot_cmd = 'sudo sh -c "reboot"'
     os.system(reboot_cmd)
+
+
+def shutdown_os():
+    cmd = 'sudo sh -c "halt"'
+    os.system(cmd)
 
 
 if __name__ == '__main__':
