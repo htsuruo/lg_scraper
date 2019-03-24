@@ -188,8 +188,9 @@ Google Searchを使ってターゲットのURLを拾ってくる.
 def scrape_target_url():
     df = pd.read_csv(OUTPUT_PATH)
     pf = platform.system()
-    if pf == 'Linux' and df.count() < 1:
-        shutdown_os()
+    if pf == 'Linux':
+        if df.count() < 1:
+            shutdown_os()
 
     if os.path.exists(SCRAPED_PATH):
         df_scraped = pd.read_csv(SCRAPED_PATH)
