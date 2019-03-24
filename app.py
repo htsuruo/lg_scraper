@@ -133,63 +133,6 @@ def google_search(domain):
         target_url = None
     return target_url
 
-# Yahoo Search
-# def yahoo_search(domain):
-#     yahoo_url = 'http://search.yahoo.co.jp/search'
-#     target_url = ''
-#     kw = '日常生活用具'
-#     query = "site:{} {}".format(domain, kw)
-#     print(query)
-#     params = {'p': query,
-#               'num': '1',
-#               'search.x': '1',
-#               'fr': 'top_ga1_sa',
-#               'tid': 'top_ga1_sa',
-#               'ei': 'UTF-8',
-#               'aq': '',
-#               'oq': '',
-#               'afs': '', }
-#     print('domain: ' + domain)
-#     response = requests.get(yahoo_url, params)
-#     soup = BeautifulSoup(response.text, 'lxml')
-#     links = soup.select(".w .hd a")
-#     return target_url
-
-# class GoogleSearch:
-    # headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"}
-    # URL_HEAD = 'https://www.google.co.jp/search?num=1&q=site:'
-    # target_url =''
-
-    # def __init__(self):
-        # self.url = '{}{} "{}"'.format(self.URL_HEAD, self.domain, self.KW)
-        # print(self.url)
-        # pass
-
-    # def get_page(self):
-    #     try:
-    #         p = urllib.parse.urlparse(self.url)
-    #         query = urllib.parse.quote_plus(p.query, safe='=&')
-    #         self.url = '{}://{}{}{}{}{}{}{}{}'.format(
-    #             p.scheme, p.netloc, p.path,
-    #             ';' if p.params else '', p.params,
-    #             '?' if p.query else '', query,
-    #             '#' if p.fragment else '', p.fragment
-    #         )
-    #         print(self.url)
-    #         request = urllib.request.Request(self.url, headers=self.headers)
-    #         html = urlopen(request)
-    #         soup = BeautifulSoup(html.read(), "lxml")
-    #         link = soup.select(".r > a")
-    #         title = soup.select(".r > a > .LC20lb")
-    #         if len(link) < 1:
-    #             return
-    #         href = link[0].get('href')
-    #         print(title)
-    #
-    #     except Exception as e:
-    #         print('-----page not found.-----')
-    #         print(e)
-
 
 def gen_search_word(domain):
     res = ''
@@ -216,13 +159,13 @@ def execute():
     s_scraper = SummaryScraper()
     s_scraper.get_prefectures()
     s_scraper.get_cities()
-    lg_scraper = LGScraper()
-    for index, row in s_scraper.pref_df.iterrows():
-        print("{} -> {}".format(row['pref'], row['name']))
-        target_url = google_search(domain=str(row['domain']))
-        search_word = gen_search_word(domain=str(row['domain']))
-        lg_scraper.get_email(url=target_url, search_word=search_word)
-        s_scraper.pref_df.at[index, 'target_url'] = target_url
+    # lg_scraper = LGScraper()
+    # for index, row in s_scraper.pref_df.iterrows():
+    #     print("{} -> {}".format(row['pref'], row['name']))
+    #     target_url = google_search(domain=str(row['domain']))
+    #     search_word = gen_search_word(domain=str(row['domain']))
+    #     lg_scraper.get_email(url=target_url, search_word=search_word)
+    #     s_scraper.pref_df.at[index, 'target_url'] = target_url
         # s_scraper.pref_df.at[index, 'email'] = lg_scraper.emails
 
     save_to_csv(s_scraper.pref_df)
