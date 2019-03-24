@@ -135,7 +135,7 @@ def google_search(domain):
     query = "{} {}".format(domain, kw)
     print('domain: ' + domain)
     try:
-        for url in search(query, lang='ja', stop=1, pause=6.0, user_agent=get_random_user_agent()):
+        for url in search(query, lang='ja', stop=1, pause=8.0, user_agent=get_random_user_agent()):
             print(url)
             target_url = url
     except Exception as e:
@@ -188,8 +188,8 @@ Google Searchを使ってターゲットのURLを拾ってくる.
 def scrape_target_url():
     df = pd.read_csv(OUTPUT_PATH)
     pf = platform.system()
-    if pf == 'Linux' and df.empty:
-        shutdown_os()
+    # if pf == 'Linux' and df.empty:
+    #     shutdown_os()
 
     if os.path.exists(SCRAPED_PATH):
         df_scraped = pd.read_csv(SCRAPED_PATH)
@@ -208,8 +208,8 @@ def scrape_target_url():
     df.to_csv(OUTPUT_PATH, index=False, encoding="utf_8_sig")
     df_scraped.to_csv(SCRAPED_PATH, index=False, encoding="utf_8_sig")
 
-    if pf == 'Linux':
-        reboot_os()
+    # if pf == 'Linux':
+    #     reboot_os()
 
 
 def reboot_os():
