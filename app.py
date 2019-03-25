@@ -14,6 +14,7 @@ import platform
 
 OUTPUT_PATH = './output/local_government.csv'
 SCRAPED_PATH = './output/local_government_scraped.csv'
+RESULT_PATH = './output/local_government_result.csv'
 URL_TOP = 'https://advance21.sakura.ne.jp/chihoujichitai/'
 df_columns = ['pref', 'name', 'top_url', 'domain', 'target_url', 'email']
 
@@ -180,6 +181,26 @@ def execute():
 
     save_to_csv(s_scraper.pref_df)
 
+
+'''
+自治体のメールアドレスを取得する
+'''
+def scrape_info():
+    df = pd.read_csv(SCRAPED_PATH)
+    lg = LGScraper()
+    df_result = pd.DataFrame(columns=df_columns)
+
+    for index, row in df.iterrows():
+        target_url = str(row['target_url'])
+        domain = str(row['domain'])
+        search_word = gen_search_word(domain=domain)
+        lg.get_email(url=target_url, search_word=search_word)
+        data = {"pref": str(row['pref']), "name": str(row['name']), "top_url": str(
+            row['top_url']), 'target_url': target_url, 'email': lg.emails}
+        df_result = df_result.append(data, ignore_index=True)
+    df_result.to_csv(RESULT_PATH, index=False, encoding="utf_8_sig")
+
+
 '''
 Google Searchを使ってターゲットのURLを拾ってくる.
 同一IPだと規制されるためEC2で動かす.
@@ -229,7 +250,8 @@ if __name__ == '__main__':
     # execute()
 
     # get target_url using by google search in ec2.
-    scrape_target_url()
+    # scrape_target_url()
+    scrape_info()
 
     end_time = time.time()
     print("total time: {} sec".format(end_time - begin_time))
