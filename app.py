@@ -11,6 +11,7 @@ import requests
 from googlesearch import search, get_random_user_agent
 import os
 import platform
+import fnmatch
 
 OUTPUT_PATH = './output/local_government.csv'
 SCRAPED_PATH = './output/local_government_scraped.csv'
@@ -95,6 +96,15 @@ class LGScraper:
 
     def get_email(self, url, search_word):
         self._clear_variable()
+
+        if url == 'nan':
+            self.emails = ''
+            return
+
+        if fnmatch.fnmatch(url, '*.txt') or fnmatch.fnmatch(url, '*.pdf'):
+            self.emails = ''
+            return
+
         try:
             html = urlopen(url)
             soup = BeautifulSoup(html.read(), "lxml")
@@ -106,8 +116,12 @@ class LGScraper:
             else:
                 print('{}を含む文字列は見つかりませんでした。'.format(search_word))
 
-        except Exception as e:
+        except urllib.error.HTTPError as e:
             print(e)
+            if e.code == 403:
+                self.emails = None
+            else:
+                self.emails = ''
 
     def _set_emails(self, email):
         emails = []
@@ -119,10 +133,17 @@ class LGScraper:
                 emails.append(res)
                 self.email_list.append(res)
 
-        if len(emails) > 0:
-            self.emails = self.emails[0]
-        else:
+        self.emails = emails
+        if len(emails) < 1:
             self.emails = ''
+            return
+        txt = ''
+        for i, e in enumerate(emails):
+            if i < 1:
+                txt = e
+            else:
+                txt = ",{}".format(e)
+        self.emails = txt
 
     def _is_duplicate(self, email):
         return email in self.email_list
@@ -151,7 +172,6 @@ def gen_search_word(domain):
         res = domain.replace('www.', '')
     res = res.replace('.jp', '')
     res = res.replace('.lg', '')
-    res = res[:-1]
     res = "@" + res
     return res
 
@@ -195,6 +215,8 @@ def scrape_info():
         domain = str(row['domain'])
         search_word = gen_search_word(domain=domain)
         lg.get_email(url=target_url, search_word=search_word)
+        if lg.emails is None:
+            break
         data = {"pref": str(row['pref']), "name": str(row['name']), "top_url": str(
             row['top_url']), 'target_url': target_url, 'email': lg.emails}
         df_result = df_result.append(data, ignore_index=True)
