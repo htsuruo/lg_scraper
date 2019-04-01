@@ -157,7 +157,7 @@ def google_search(domain):
     query = "{} {}".format(domain, kw)
     print('domain: ' + domain)
     try:
-        for url in search(query, lang='ja', stop=1, pause=8.0, user_agent=get_random_user_agent()):
+        for url in search(query, lang='ja', stop=1, pause=3.0, user_agent=get_random_user_agent()):
             print(url)
             target_url = url
     except Exception as e:
@@ -242,7 +242,7 @@ def scrape_target_url():
     for index, row in df.iterrows():
         target_url = google_search(domain=str(row['domain']))
         if target_url is None:
-            post_to_slack(df_scraped.tail(0))
+            post_to_slack('{}/{}'.format(df_scraped.tail(1)['pref'], df_scraped.tail(1)['name']))
             break
         data = {"pref": str(row['pref']), "name": str(row['name']), "top_url": str(
             row['top_url']), 'domain': str(row['domain']), 'target_url': target_url}
