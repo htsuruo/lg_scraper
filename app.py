@@ -242,6 +242,7 @@ def scrape_target_url():
     for index, row in df.iterrows():
         target_url = google_search(domain=str(row['domain']))
         if target_url is None:
+            post_to_slack(df_scraped.tail(0))
             break
         data = {"pref": str(row['pref']), "name": str(row['name']), "top_url": str(
             row['top_url']), 'domain': str(row['domain']), 'target_url': target_url}
@@ -265,6 +266,12 @@ def shutdown_os():
     os.system(cmd)
 
 
+def post_to_slack(text):
+    reboot_cmd = 'echo {} | ./slack.sh'.format(text)
+    os.system(reboot_cmd)
+
+
+
 if __name__ == '__main__':
     print('start scraping...')
     begin_time = time.time()
@@ -272,8 +279,8 @@ if __name__ == '__main__':
     # execute()
 
     # get target_url using by google search in ec2.
-    # scrape_target_url()
-    scrape_info()
+    scrape_target_url()
+    # scrape_info()
 
     end_time = time.time()
     print("total time: {} sec".format(end_time - begin_time))
